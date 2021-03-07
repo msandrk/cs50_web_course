@@ -54,6 +54,11 @@ a:hover{
     margin-bottom: 4vh;
 }
 
+.links-row a:focus {
+    outline: none;
+    color:#3c4043;
+    text-decoration: underline;
+}
 
 .button {
     background-color: #f8f9fa;
