@@ -9,7 +9,9 @@
         <div class="container-fluid">
             <div class="row align-items-center justify-content-between links-row">
                 <div class="col-2">
-                    <img class="logo" src="imgs/Google_2015_logo.svg">
+                    <a href="index.html">
+                        <img class="logo" src="imgs/Google_2015_logo.svg">
+                    </a>
                 </div>
                 <div class= "col-auto">
                     <span class="col-auto">
@@ -32,7 +34,7 @@
                             <label id="label-find-pages">Find pages with...</label>
                         </div>
                         <div class="col-6">&nbsp;</div>
-                        <div class="col-4">
+                        <div class="col-4 hide-for-tablet">
                             <label id="label-do-this">To do this in the search box.</label>
                         </div>
                     </div>
@@ -45,7 +47,7 @@
                         <div class="col-6">
                             <input type="text" name="as_q">
                         </div>
-                        <div class="col-4">
+                        <div class="col-4 hide-for-tablet">
                             <label class="right-columns">type the important words:
                                 <span>
                                     <label style="font-family: monospace;">tri-colour rat terrier</label>
@@ -62,7 +64,7 @@
                         <div class="col-6">
                             <input type="text" name="as_epq">
                         </div>
-                        <div class="col-4">
+                        <div class="col-4 hide-for-tablet">
                             <label class="right-columns">Put exact words in quotes: 
                                 <span>
                                     <label class="input-example">"rat terrier"</label>
@@ -72,14 +74,14 @@
                     </div>
                     
                     <!-- any of these words-->
-                    <div class="row mt-3">
+                    <div class="row mt-3 align-items-center">
                         <div class="col-2">
                             <label class="left-columns">any of these words:</label>
                         </div>
                         <div class="col-6">
                             <input type="text" name="as_oq">
                         </div>
-                        <div class="col-4">
+                        <div class="col-4 hide-for-tablet">
                             <label class="right-columns">Type OR between all the words you want: 
                                 <span>
                                     <label class="input-example">miniature</label>
@@ -92,14 +94,14 @@
                     </div>
 
                     <!-- none of the words -->
-                    <div class="row mt-3">
+                    <div class="row mt-3 align-items-center">
                         <div class="col-2">
                             <label class="left-columns">none of these words:</label>
                         </div>
                         <div class="col-6">
                             <input type="text" name="as_eq">
                         </div>
-                        <div class="col-4">
+                        <div class="col-4 hide-for-tablet">
                             <label class="right-columns">Put a minus sign just before words that you don't want: 
                                 <span>
                                     <label class="input-example">-rodent, -"Jack Russell"</label>
@@ -110,12 +112,11 @@
 
                     <!-- submit button -->
                     <div class="row align-items-center mt-3">
-                        <div class="col-8">
-                            &nbsp;
-                        </div>
-                        <div class="col-4">
+                        <div class="col-2">&nbsp;</div>
+                        <div class="col-6" id="submit-advanced-container">
                             <input id="submit-advanced" type="submit" value="Advanced Search">
                         </div>
+                        <div class="col-4">&nbsp;</div>
                     </div>
                 </form>
             </div>

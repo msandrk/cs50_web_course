@@ -58,6 +58,7 @@
     font-weight: 400;
     color: rgb(217, 48, 37);
     padding: 21px 49px;
+    margin-right: 10px;
     border-bottom: 1px solid rgb(238, 238, 238);
 }
 
@@ -69,6 +70,11 @@
     color: #777;
     font-size: 13px;
     font-weight: 600;
+}
+
+#submit-advanced-container {
+    display: flex; 
+    justify-content: flex-end;
 }
 
 #submit-advanced {
@@ -83,6 +89,13 @@
 }
 
 #submit-advanced:hover{
-    /* TODO */
     background-color: rgb(40, 120, 200);
+}
+
+@media (max-width: 1050px) {
+    .hide-for-tablet {
+        display: none;
+        border: 1px solid red;
+    }
+
 }
