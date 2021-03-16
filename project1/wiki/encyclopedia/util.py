@@ -1,5 +1,6 @@
 import re
 
+import markdown2
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 
@@ -35,3 +36,9 @@ def get_entry(title):
         return f.read().decode("utf-8")
     except FileNotFoundError:
         return None
+
+
+def markdown_to_html(markdown_text: str):
+    """Converts markdown text to an HTML5 format string
+    """
+    return markdown2.markdown(markdown_text)
