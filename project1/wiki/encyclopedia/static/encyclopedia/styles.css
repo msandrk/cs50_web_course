@@ -18,8 +18,13 @@ h2 {
 }
 
 textarea {
-    height: 90vh;
+    height: 80vh;
     width: 80%;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    
 }
 
 .main {

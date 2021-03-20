@@ -42,3 +42,6 @@ def markdown_to_html(markdown_text: str):
     """Converts markdown text to an HTML5 format string
     """
     return markdown2.markdown(markdown_text)
+
+def exists_entry(title):
+    return title in list_entries()

@@ -11,17 +11,17 @@
 {% endblock %}
 
 {% block body %}
-    <h2>
+    
         {% if query_str is None %}
 
-        All Pages
+        <h1>All Pages</h1>
         
         {% else %}
         
-        Search results for '{{query_str}}'
+        <h2>Search results for '{{query_str}}'</h2>
         
         {% endif %}
-    </h2>
+    
     
     <ul>
         {% for entry in entries %}
