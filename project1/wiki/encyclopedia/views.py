@@ -1,5 +1,5 @@
 from django import forms
-from django.http import HttpResponseNotFound, HttpResponseRedirect, HttpResponseBadRequest, HttpRequest, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponseBadRequest, HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -24,10 +24,11 @@ def index(request: HttpRequest) -> HttpResponse:
 
 
 def entry_page(request: HttpRequest, title: str) -> HttpResponse:
+    # sanitized_title = re.sub('_', ' ', title)
     entry_file = util.get_entry(title)
     
     if entry_file is None:
-        return HttpResponseNotFound()
+        return render(request, 'encyclopedia/not_found.html', status=404)
     
     html = util.markdown_to_html(entry_file)
     return render(request, "encyclopedia/entry.html", {
@@ -35,14 +36,16 @@ def entry_page(request: HttpRequest, title: str) -> HttpResponse:
         "entry_body": html
     })
 
+
 def search_entry(request: HttpRequest, query_str: str) -> HttpResponse:
+    entries = util.list_entries()
     # if there is an exact match, redirect to that entry page
-    if util.exists_entry(query_str):
+    if query_str in entries:
         return HttpResponseRedirect(reverse('wiki:entry_page', args=[query_str]))
     
     # otherwise list all entries that have query string as substring
     else:
-        candidates = [e for e in util.list_entries() if e.lower().find(query_str.lower()) != -1]
+        candidates = [e for e in entries if e.lower().find(query_str.lower()) != -1]
         return render(request, "encyclopedia/index.html", {
             "query_str": query_str,
             "entries": candidates
@@ -74,4 +77,21 @@ def add_entry(request: HttpRequest) -> HttpResponse:
     # if method GET, return empty form
     return render(request, "encyclopedia/add.html", {
         "form": NewEntryForm()
+    })
+
+def edit_entry(request: HttpRequest, title: str) -> HttpResponse:
+    if not util.exists_entry(title):
+        return render(request, 'encyclopedia/not_found.html', status=404)
+
+    if request.method == 'POST':
+        content = request.POST['content']
+        util.save_entry(title, content)
+
+        return HttpResponseRedirect(reverse('wiki:entry_page', args=[title]))
+
+    
+    content = util.get_entry(title)
+    return render(request, 'encyclopedia/edit.html', {
+        "entry_title": title,
+        "entry_content": content
     })

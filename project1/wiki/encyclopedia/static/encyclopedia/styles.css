@@ -18,13 +18,12 @@ h2 {
 }
 
 textarea {
-    height: 80vh;
+    height: 85vh;
     width: 80%;
     margin-top: 10px;
     padding: 5px 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    
 }
 
 .main {
@@ -41,8 +40,9 @@ textarea {
     background-color: #f0f0f0;
     height: 100vh;
     padding: 20px;
+    padding-left: 25px;
 }
 
 .sidebar h2 {
-    margin-top: 5px;
+    margin-top: 2px;
 }
