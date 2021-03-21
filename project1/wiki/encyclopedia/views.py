@@ -1,3 +1,5 @@
+import random
+
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, HttpRequest, HttpResponse
 from django.shortcuts import render
@@ -7,11 +9,19 @@ from . import util
 
 
 class NewEntryForm(forms.Form):
+    """Form used for submiting new entry.
+    """
+
     title = forms.CharField(label="Title")
     content =  forms.CharField(label="", widget=forms.Textarea())
 
 
 def index(request: HttpRequest) -> HttpResponse:
+    """View representing index page. If no query parameter 'q',
+    lists all available entries. If 'q' parameter specified returns
+    result from search_entry function.
+    """
+
     query_str = request.GET.get('q', None)
     
     if query_str is not None:
@@ -24,6 +34,10 @@ def index(request: HttpRequest) -> HttpResponse:
 
 
 def entry_page(request: HttpRequest, title: str) -> HttpResponse:
+    """Returns 'title' entry page. If no such entry, returns 404
+    Not Found.
+    """
+
     # sanitized_title = re.sub('_', ' ', title)
     entry_file = util.get_entry(title)
     
@@ -38,6 +52,10 @@ def entry_page(request: HttpRequest, title: str) -> HttpResponse:
 
 
 def search_entry(request: HttpRequest, query_str: str) -> HttpResponse:
+    """Searches through entries. If exect match exists redirects to that page, else
+    renders all entries that contain 'query_str' as substring in their title.
+    """
+
     entries = util.list_entries()
     # if there is an exact match, redirect to that entry page
     if query_str in entries:
@@ -53,6 +71,12 @@ def search_entry(request: HttpRequest, query_str: str) -> HttpResponse:
 
 
 def add_entry(request: HttpRequest) -> HttpResponse:
+    """If method is GET renders an empty form for creating new
+    wiki page. If method is POST and no entry with specified
+    title already exists, stores new entry. If an entry with
+    given title already exists returns 400 Bad Request response
+    and form filled with data that was tried to be submitted
+    """
 
     if request.method == "POST":
         entry_form = NewEntryForm(request.POST)
@@ -80,6 +104,11 @@ def add_entry(request: HttpRequest) -> HttpResponse:
     })
 
 def edit_entry(request: HttpRequest, title: str) -> HttpResponse:
+    """When method is GET, fetches 'title' entry for editing. If method
+    is POST, stores edited content of 'title' entry and redirects to that
+    entry page.
+    """
+
     if not util.exists_entry(title):
         return render(request, 'encyclopedia/not_found.html', status=404)
 
@@ -95,3 +124,11 @@ def edit_entry(request: HttpRequest, title: str) -> HttpResponse:
         "entry_title": title,
         "entry_content": content
     })
+
+def random_page(request: HttpRequest) -> HttpResponse:
+    """ Redirects to a random entry page
+    """
+    entries = util.list_entries()
+    entry = entries[random.randrange(0, len(entries))]
+
+    return HttpResponseRedirect(reverse('wiki:entry_page', args=[entry]))
