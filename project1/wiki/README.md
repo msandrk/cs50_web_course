@@ -17,7 +17,7 @@ By having one Markdown file represent each encyclopedia entry, we can make our e
 ## Getting started
 * Download the distribution code from https://cdn.cs50.net/web/2020/spring/projects/1/wiki.zip and unzip it.
 
-# Understanding
+## Understanding
 
 In the distribution code is a Django project called `wiki` that contains a single app called `encyclopedia`.
 
