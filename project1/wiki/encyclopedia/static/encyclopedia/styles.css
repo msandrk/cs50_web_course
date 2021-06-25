@@ -24,6 +24,21 @@ textarea {
     padding: 5px 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    margin: 10px 0;
+}
+
+input[type="submit"]{
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: rgb(40, 40, 40);
+    background-color: #eee;
+    padding: 4px 12px;
+}
+
+input[type="submit"]:hover {
+    color: rgb(10, 10, 10);
+    background-color: #efefef;
+    border: 1px solid #aaa;
 }
 
 .main {

@@ -1,16 +1,28 @@
 {% extends "encyclopedia/layout.html" %}
 
 {% block title %}
-    Encyclopedia - Add New Entry
+Encyclopedia - Add New Entry
 {% endblock %}
 
 {% block body %}
-    {% if existing_title is not None and existing_title %}
-        <h4 style="color: red;">No two entries can have same title!</h4>
-    {% endif %}
-    <form method="POST" action="{% url 'wiki:add_entry' %}">
-        {% csrf_token %}
-        {{ form }}
-        <input type="submit" value="Submit">
-    </form>
+{% if existing_title is not None and existing_title %}
+<h4 style="color: red;">No two entries can have same title!</h4>
+{% endif %}
+<div class="row">
+    <div class="col-12">
+        <form method="POST" action="{% url 'wiki:add_entry' %}">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-12">
+                    {{ form }}
+                </div>
+            </div>
+            <div class="row justify-content-start">
+                <div class="col-3">
+                    <input type="submit" value="Submit">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
