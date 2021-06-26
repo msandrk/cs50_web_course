@@ -25,6 +25,7 @@ textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
     margin: 10px 0;
+    resize: none;
 }
 
 input[type="submit"]{
@@ -42,7 +43,7 @@ input[type="submit"]:hover {
 }
 
 .main {
-    padding: 10px;
+    padding: 10px 25px;
 }
 
 .search {
@@ -53,7 +54,7 @@ input[type="submit"]:hover {
 
 .sidebar {
     background-color: #f0f0f0;
-    height: 100vh;
+    height: 110vh;
     padding: 20px;
     padding-left: 25px;
 }

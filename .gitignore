@@ -2,3 +2,4 @@ lecture_codes/
 
 *-venv/
 __pycache__/
+*/.vscode/
