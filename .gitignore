@@ -1,5 +1,5 @@
 lecture_codes/
 
-*-venv/
+*venv/
 __pycache__/
 */.vscode/
