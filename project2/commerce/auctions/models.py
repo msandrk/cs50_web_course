@@ -26,7 +26,7 @@ class Listing(models.Model):
 
     title = models.CharField(max_length=64)
     description = models.TextField()
-    image_url = models.URLField()
+    image_url = models.URLField(blank=True)
     category = models.CharField(max_length=64, choices=LISTING_CATEGORIES, default='OTHR')
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_listings")
     starting_price = models.PositiveIntegerField()

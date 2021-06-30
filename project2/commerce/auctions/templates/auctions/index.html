@@ -5,10 +5,12 @@
     <ul>
         {% for listing in listings %}
         <li>
-            <p>{{ listing.title }}</p>
-            <p>{{ listing.description }}</p>
-            <p>{{ listing.highest_bid.amount</p>
-            <a href="{{ listing.image_url }}"></a>
+            <div>
+            <a href="{% url 'listing' listing.id %}">{{ listing.title }}</a>
+            <br>{{ listing.description }}
+            <br>{{ listing.highest_bid.amount }}</p>
+            <br><img src='{{ listing.image_url }}'>
+            </div>
         </li>
         {% empty %}
         <li>No active listings at the moment.</li>

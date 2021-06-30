@@ -2,7 +2,7 @@
 
 {% block body %}
     <h2>Create a new listing</h2>
-    <form method="POST" action="{ url 'auction:new_listing'}">
+    <form method="POST" action="{% url 'new_listing' %}">
         {% csrf_token %}
         {{ listing_form }}
         <input type="submit" value="Create New Listing">

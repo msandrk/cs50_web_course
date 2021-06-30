@@ -1,0 +1,16 @@
+{% extends 'auctions/layout.html' %}
+
+{% block body %}
+<h3>{{ listing.title }}</h3>
+<ul>
+    <li>{{ listing.description }}</li>
+    <li>
+        {% if listing.highest_bid is not None %}
+            {{ listing.highest_bid.amount }}
+        {% else %}
+            {{ listing.starting_price }}
+        {% endif %}
+    </li>
+    <li><img src="{{ listing.image_url }}"></li>
+</ul>
+{% endblock %}
