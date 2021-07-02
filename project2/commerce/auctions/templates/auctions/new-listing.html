@@ -4,7 +4,7 @@
     <h2>Create a new listing</h2>
     <form method="POST" action="{% url 'new_listing' %}">
         {% csrf_token %}
-        {{ listing_form }}
+        {{ listing_form.as_p }}
         <input type="submit" value="Create New Listing">
     </form>
 {% endblock %}

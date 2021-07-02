@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
 from django.shortcuts import render
 from django.urls import reverse
 from django import forms
@@ -15,13 +15,13 @@ class ListingForm(forms.ModelForm):
         exclude = ['created', 'owner', 'active', 'highest_bid']
     
 
-def index(request):
+def index(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/index.html", {
         "listings": Listing.objects.filter(active=True)
     })
 
 
-def login_view(request):
+def login_view(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
 
         # Attempt to sign user in
@@ -41,12 +41,12 @@ def login_view(request):
         return render(request, "auctions/login.html")
 
 
-def logout_view(request):
+def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     return HttpResponseRedirect(reverse("index"))
 
 
-def register(request):
+def register(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         username = request.POST["username"]
         email = request.POST["email"]
@@ -72,7 +72,7 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
-def listing(request, listing_id):
+def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
         
@@ -85,7 +85,7 @@ def listing(request, listing_id):
         return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
 
 @login_required
-def new_listing(request):
+def new_listing(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ListingForm(request.POST)
         listing = form.save(commit=False)
@@ -94,4 +94,22 @@ def new_listing(request):
         return HttpResponseRedirect(reverse('listing', args=[listing.id]))
     return render(request, 'auctions/new-listing.html', {
         "listing_form": ListingForm()
+    })
+
+def categories(request: HttpRequest) -> HttpResponse:
+    return render(request, "auctions/categories.html", {
+        "categories": [(label.lower(), name) for label, name in Listing.LISTING_CATEGORIES]
+    })
+
+def category(request: HttpRequest, category: str) -> HttpResponse:
+    category_ids, category_names = zip(*Listing.LISTING_CATEGORIES)
+    category = category.upper()
+
+    if category not in category_ids:
+        return HttpResponseNotFound("No such category!")
+    
+    name = category_names[list(category_ids).index(category)]
+    return render(request, 'auctions/category.html', {
+        "title": name,
+        "listings": Listing.objects.filter(active=True).filter(category=category)
     })

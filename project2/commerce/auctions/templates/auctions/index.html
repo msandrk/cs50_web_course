@@ -2,18 +2,18 @@
 
 {% block body %}
     <h2>Active Listings</h2>
-    <ul>
         {% for listing in listings %}
-        <li>
             <div>
-            <a href="{% url 'listing' listing.id %}">{{ listing.title }}</a>
-            <br>{{ listing.description }}
-            <br>{{ listing.highest_bid.amount }}</p>
-            <br><img src='{{ listing.image_url }}'>
+                <p>
+                    <a href="{% url 'listing' listing.id %}">{{ listing.title }}</a>
+                </p>
+                <p>{{ listing.description }}</p>
+                <p>{{ listing.highest_bid.amount }}</p>
+                <p><img src='{{ listing.image_url }}' witdh="150" height="150"></p>
             </div>
-        </li>
+            <hr>
         {% empty %}
-        <li>No active listings at the moment.</li>
+        <p>No active listings at the moment.</p>>
         {% endfor %}
     </ul>
 {% endblock %}

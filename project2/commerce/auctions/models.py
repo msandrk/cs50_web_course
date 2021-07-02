@@ -35,4 +35,5 @@ class Listing(models.Model):
     active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f"{self.title} ({self.category}): {self.highest_bid}"
+        price = self.starting_price if self.highest_bid is None else self.highest_bid.amount
+        return f"{self.title} ({self.category}): {price}$"
