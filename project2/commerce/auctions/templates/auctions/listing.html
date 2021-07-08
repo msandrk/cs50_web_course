@@ -1,19 +1,35 @@
 {% extends 'auctions/layout.html' %}
 
 {% block body %}
-<h3>{{ listing.title }}</h3>
-<ul>
-    <li><img src="{{ listing.image_url }}"></li>
-    <li>{{ listing.description }}</li>
-    <li>
-        <h4>
-            {% if listing.highest_bid is not None %}
-                {{ listing.highest_bid.amount }}
-            {% else %}
-                {{ listing.starting_price }}
-            {% endif %}$
-        </h4>
-    </li>
-    
-</ul>
+
+    {% with curr_price=listing.highest_bid.amount|default:listing.starting_price %}
+        <div class="row">
+            
+            <div class="col-6">
+                <h3>{{ listing.title }}</h3>
+                <article>
+                    {% with img_url=listing.image_url|default:'/static/imgs/no_image_available.jpg' %}
+                    <p><img src='{{ img_url }}' witdh="250" height="250"></p>
+                    {% endwith %}
+                    <p>{{ listing.description }}</p>
+                    <h5>Current price: {{ curr_price }}</h5>        
+                    <small>Created on: {{ listing.created }}</small>
+                </article>
+            </div>
+            <div class="col-6">
+                <h5>Make a bid:</h5>
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    {% with min_bid=curr_price|add:'1' %}
+                    <div class="form-group">
+                        <!-- <label for="bid">/label> -->
+                        <input class="form-control" id="bid" type="number" min={{min_bid}} value={{ min_bid }} placeholder={{min_bid}}>
+                    </div>
+                    <input class="btn btn-primary" type="submit" value="Place Bid">
+                    {% endwith %}
+                </form>
+            </div>
+
+        </div>
+    {% endwith %}
 {% endblock %}
