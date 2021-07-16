@@ -4,7 +4,6 @@
 
     {% with curr_price=listing.highest_bid.amount|default:listing.starting_price %}
         <div class="row">
-            
             <div class="col-6">
                 <h3>{{ listing.title }}</h3>
                 <article>
@@ -17,19 +16,28 @@
                 </article>
             </div>
             <div class="col-6">
-                <h5>Make a bid:</h5>
-                <form method="POST" action="">
-                    {% csrf_token %}
+                {% if not user.is_authenticated %}
+                    <p>
+                        <br>
+                        <a href="{% url 'login' %}">Log In</a> to place a bid for this item.
+                        <br>
+                        Don't have an account? <a href="{% url 'register' %}">Register now.</a>
+                    </p>
+                {% elif user != listing.owner %}
                     {% with min_bid=curr_price|add:'1' %}
-                    <div class="form-group">
-                        <!-- <label for="bid">/label> -->
-                        <input class="form-control" id="bid" type="number" min={{min_bid}} value={{ min_bid }} placeholder={{min_bid}}>
-                    </div>
-                    <input class="btn btn-primary" type="submit" value="Place Bid">
+                    <h5>Make a bid:</h5>
+                    <form action="{% url 'new_bid' listing.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input required class="form-control" type="number" name="bid_amount" min="{{min_bid}}" placeholder="{{min_bid}}">
+                        </div>
+                        <input class="btn btn-primary" type="submit" value="Place Bid">
+                    </form>
                     {% endwith %}
-                </form>
+                {% else %}
+                    <p>TODO: Enable closing this auction!</p>                    
+                {% endif %}
             </div>
-
         </div>
     {% endwith %}
 {% endblock %}

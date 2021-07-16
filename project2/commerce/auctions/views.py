@@ -1,12 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError, HttpResponseBadRequest
 from django.shortcuts import render
 from django.urls import reverse
 from django import forms
 
-from .models import User, Listing
+from .models import User, Listing, Bid
 
 
 class ListingForm(forms.ModelForm):
@@ -14,7 +14,6 @@ class ListingForm(forms.ModelForm):
         model = Listing
         exclude = ['created', 'owner', 'active', 'highest_bid']
     
-
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/index.html", {
         "listings": Listing.objects.filter(active=True)
@@ -113,3 +112,30 @@ def category(request: HttpRequest, category: str) -> HttpResponse:
         "title": name,
         "listings": Listing.objects.filter(active=True).filter(category=category)
     })
+
+@login_required
+def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
+    if request.method == "POST":
+        
+        listing = Listing.objects.filter(pk=listing_id).first()
+        if listing is None:
+            return render(request, "auctions/not-found.html", {
+                "message": "No such listing."
+            }, status=404)
+        
+        import pdb
+        breakpoint()
+        bid_amount = int(request.POST['bid_amount'])
+
+        curr_price = listing.starting_price if listing.highest_bid is None else listing.highest_bid.amount
+
+        if curr_price < bid_amount:
+            bid = Bid(bidder=request.user, amount=bid_amount)
+            bid.save()
+            listing.highest_bid = bid
+            listing.save()
+            return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+        else:
+            return HttpResponseBadRequest(content='Bid must be ')
+
+    return HttpResponseBadRequest('Ooops, you did something wrong, bad request!')
