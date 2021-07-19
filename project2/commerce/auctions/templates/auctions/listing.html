@@ -2,42 +2,44 @@
 
 {% block body %}
 
-    {% with curr_price=listing.highest_bid.amount|default:listing.starting_price %}
-        <div class="row">
-            <div class="col-6">
-                <h3>{{ listing.title }}</h3>
-                <article>
-                    {% with img_url=listing.image_url|default:'/static/imgs/no_image_available.jpg' %}
-                    <p><img src='{{ img_url }}' witdh="250" height="250"></p>
-                    {% endwith %}
-                    <p>{{ listing.description }}</p>
-                    <h5>Current price: {{ curr_price }}</h5>        
-                    <small>Created on: {{ listing.created }}</small>
-                </article>
-            </div>
-            <div class="col-6">
-                {% if not user.is_authenticated %}
-                    <p>
-                        <br>
-                        <a href="{% url 'login' %}">Log In</a> to place a bid for this item.
-                        <br>
-                        Don't have an account? <a href="{% url 'register' %}">Register now.</a>
-                    </p>
-                {% elif user != listing.owner %}
-                    {% with min_bid=curr_price|add:'1' %}
-                    <h5>Make a bid:</h5>
-                    <form action="{% url 'new_bid' listing.id %}" method="POST">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <input required class="form-control" type="number" name="bid_amount" min="{{min_bid}}" placeholder="{{min_bid}}">
-                        </div>
-                        <input class="btn btn-primary" type="submit" value="Place Bid">
-                    </form>
-                    {% endwith %}
-                {% else %}
-                    <p>TODO: Enable closing this auction!</p>                    
-                {% endif %}
-            </div>
+    <div class="row">
+        <div class="col-6">
+            <h3>{{ listing.title }}</h3>
+            <article>
+                {% with img_url=listing.image_url|default:'/static/imgs/no_image_available.jpg' %}
+                <p><img src='{{ img_url }}' witdh="250" height="250"></p>
+                {% endwith %}
+                <p>{{ listing.description }}</p>
+                <h5>Current price:
+                    {% if no_prev_bids %} 
+                        {{ min_bid }}
+                    {% else %}
+                        {{ min_bid|add:'-1' }}
+                    {% endif %}
+                </h5>        
+                <small>Created on: {{ listing.created }}</small>
+            </article>
         </div>
-    {% endwith %}
+        <div class="col-6">
+            {% if not user.is_authenticated %}
+                <p>
+                    <br>
+                    <a href="{% url 'login' %}">Log In</a> to place a bid for this item.
+                    <br>
+                    Don't have an account? <a href="{% url 'register' %}">Register now.</a>
+                </p>
+            {% elif user != listing.owner %}
+                <h5>Make a bid:</h5>
+                <form action="{% url 'new_bid' listing.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input required class="form-control" type="number" name="bid_amount" min="{{min_bid}}" placeholder="{{min_bid}}">
+                    </div>
+                    <input class="btn btn-primary" type="submit" value="Place Bid">
+                </form>
+            {% else %}
+                <p>TODO: Enable closing this auction!</p>                    
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

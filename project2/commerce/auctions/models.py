@@ -11,7 +11,7 @@ class Bid(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Bidder: {self.bidder}, Listing: {self.listing}, Bid: {self.amount}"
+        return f"Bidder: {self.bidder}, Listing: {self.listing.first()} Bid: {self.amount}"
 
 class Listing(models.Model):
     
@@ -31,7 +31,8 @@ class Listing(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_listings")
     starting_price = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
-    highest_bid = models.ForeignKey(Bid, null=True, blank=True, on_delete=models.SET_NULL)
+    highest_bid = models.ForeignKey(Bid, null=True, blank=True, on_delete=models.SET_NULL, 
+                related_name='listing')
     active = models.BooleanField(default=True)
     
     def __str__(self):

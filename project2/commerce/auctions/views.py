@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
 from django.db import IntegrityError
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError, HttpResponseBadRequest
 from django.shortcuts import render
@@ -13,13 +14,14 @@ class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
         exclude = ['created', 'owner', 'active', 'highest_bid']
-    
+
+@require_http_methods(["GET"])
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/index.html", {
         "listings": Listing.objects.filter(active=True)
     })
 
-
+@require_http_methods(["GET", "POST"])
 def login_view(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
 
@@ -39,12 +41,12 @@ def login_view(request: HttpRequest) -> HttpResponse:
     else:
         return render(request, "auctions/login.html")
 
-
+@require_http_methods(["GET"])
 def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     return HttpResponseRedirect(reverse("index"))
 
-
+@require_http_methods(["GET", "POST"])
 def register(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         username = request.POST["username"]
@@ -71,35 +73,50 @@ def register(request: HttpRequest) -> HttpResponse:
     else:
         return render(request, "auctions/register.html")
 
+@require_http_methods(["GET"])
 def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
         
+        no_prev_bids = listing.highest_bid is None
+        
         return render(request, 'auctions/listing.html', {
-        "listing": Listing.objects.get(pk=listing_id)
+            "listing": Listing.objects.get(pk=listing_id),
+            "min_bid": listing.starting_price if no_prev_bids else listing.highest_bid.amount + 1,
+            "no_prev_bids": no_prev_bids
         })
     except Listing.DoesNotExist:
         return HttpResponseNotFound('No such listing!')
     except Listing.MultipleObjectsReturned:
         return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def new_listing(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ListingForm(request.POST)
+        
+        if not form.is_valid():
+            return render(request, 'auctions/new-listing.html', {
+                "listing_form": form,
+                "error_field_message": next(iter(form.errors.items))
+            })
         listing = form.save(commit=False)
         listing.owner = request.user
         listing.save()
         return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-    return render(request, 'auctions/new-listing.html', {
-        "listing_form": ListingForm()
-    })
+    else:
+        return render(request, 'auctions/new-listing.html', {
+            "listing_form": ListingForm()
+        })
 
+@require_http_methods(["GET"])
 def categories(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/categories.html", {
         "categories": [(label.lower(), name) for label, name in Listing.LISTING_CATEGORIES]
     })
 
+@require_http_methods("GET")
 def category(request: HttpRequest, category: str) -> HttpResponse:
     category_ids, category_names = zip(*Listing.LISTING_CATEGORIES)
     category = category.upper()
@@ -113,29 +130,29 @@ def category(request: HttpRequest, category: str) -> HttpResponse:
         "listings": Listing.objects.filter(active=True).filter(category=category)
     })
 
+@require_http_methods(["POST"])
 @login_required
-def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
-    if request.method == "POST":
-        
-        listing = Listing.objects.filter(pk=listing_id).first()
-        if listing is None:
-            return render(request, "auctions/not-found.html", {
-                "message": "No such listing."
-            }, status=404)
-        
-        import pdb
-        breakpoint()
+def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:    
+    listing = Listing.objects.filter(pk=listing_id).first()
+    if listing is None:
+        return render(request, "auctions/not-found.html", {
+            "message": "No such listing."
+        }, status=404)
+
+    try:
         bid_amount = int(request.POST['bid_amount'])
+    except ValueError:
+        return HttpResponseBadRequest(f"Bid must be an integer, {request.POST['bid_amount']} is not an integer")
+    
+    min_bid = listing.starting_price if listing.highest_bid is None else listing.highest_bid.amount + 1
 
-        curr_price = listing.starting_price if listing.highest_bid is None else listing.highest_bid.amount
+    if min_bid <= bid_amount:
+        bid = Bid(bidder=request.user, amount=bid_amount)
+        listing.highest_bid = bid
+        bid.save()
+        listing.save()
 
-        if curr_price < bid_amount:
-            bid = Bid(bidder=request.user, amount=bid_amount)
-            bid.save()
-            listing.highest_bid = bid
-            listing.save()
-            return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-        else:
-            return HttpResponseBadRequest(content='Bid must be ')
+        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
 
-    return HttpResponseBadRequest('Ooops, you did something wrong, bad request!')
+    else:
+        return HttpResponseBadRequest(content=f"Minimum bid not met! Bid must be at least {min_bid}")
