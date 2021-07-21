@@ -19,6 +19,17 @@
                 </h5>        
                 <small>Created on: {{ listing.created }}</small>
             </article>
+            {% if user.is_authenticated and user != listing.owner %}
+                {% if on_watchlist %}
+                    <a href="{% url 'remove_from_watchlist' listing.id %}">
+                        <button type="button">Remove from Watchlist</button>
+                    </a>
+                {% else %}
+                    <a href="{% url 'add_to_watchlist' listing.id %}">
+                        <button type="button">Add to Watchlist</button>
+                    </a>
+                {% endif %}
+            {% endif %}
         </div>
         <div class="col-6">
             {% if not user.is_authenticated %}

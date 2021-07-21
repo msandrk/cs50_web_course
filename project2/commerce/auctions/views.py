@@ -80,10 +80,13 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
         
         no_prev_bids = listing.highest_bid is None
         
+        on_watchlist = listing.watchlist_users.filter(pk=request.user.id).exists()
+        print(on_watchlist)
         return render(request, 'auctions/listing.html', {
             "listing": Listing.objects.get(pk=listing_id),
             "min_bid": listing.starting_price if no_prev_bids else listing.highest_bid.amount + 1,
-            "no_prev_bids": no_prev_bids
+            "no_prev_bids": no_prev_bids,
+            "on_watchlist": on_watchlist
         })
     except Listing.DoesNotExist:
         return HttpResponseNotFound('No such listing!')
@@ -161,7 +164,7 @@ def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
 @require_http_methods(["GET"])
 def watchlist(request: HttpRequest) -> HttpResponse:
     return render(request, 'auctions/watchlist.html', {
-        'listings': request.user.watchlist
+        'listings': request.user.watchlist.all()
     })
 
 @login_required
