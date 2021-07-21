@@ -156,3 +156,35 @@ def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
 
     else:
         return HttpResponseBadRequest(content=f"Minimum bid not met! Bid must be at least {min_bid}")
+
+@login_required
+@require_http_methods(["GET"])
+def watchlist(request: HttpRequest) -> HttpResponse:
+    return render(request, 'auctions/watchlist.html', {
+        'listings': request.user.watchlist
+    })
+
+@login_required
+# @require_http_methods(["POST"])
+def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+
+        request.user.watchlist.add(listing)
+        return HttpResponseRedirect(reverse('listing', args=[listing_id]))
+    except Listing.DoesNotExist:
+        return HttpResponseNotFound('No such listing!')
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
+
+@login_required
+def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+
+        request.user.watchlist.remove(listing)
+        return HttpResponseRedirect(reverse('listing', args=[listing_id]))
+    except Listing.DoesNotExist:
+        return HttpResponseNotFound('No such listing')
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
