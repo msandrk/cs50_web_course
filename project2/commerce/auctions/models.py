@@ -33,7 +33,7 @@ class Listing(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     highest_bid = models.ForeignKey(Bid, null=True, blank=True, on_delete=models.SET_NULL, 
                 related_name='listing')
-    active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
     
     def __str__(self):
         price = self.starting_price if self.highest_bid is None else self.highest_bid.amount

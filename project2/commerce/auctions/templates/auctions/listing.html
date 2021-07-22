@@ -19,37 +19,48 @@
                 </h5>        
                 <small>Created on: {{ listing.created }}</small>
             </article>
-            {% if user.is_authenticated and user != listing.owner %}
+            {% if user.is_authenticated and user != listing.owner and listing.is_active %} 
                 {% if on_watchlist %}
                     <a href="{% url 'remove_from_watchlist' listing.id %}">
-                        <button type="button">Remove from Watchlist</button>
+                        <button class="btn  btn-primary" type="button">Remove from Watchlist</button>
                     </a>
                 {% else %}
                     <a href="{% url 'add_to_watchlist' listing.id %}">
-                        <button type="button">Add to Watchlist</button>
+                        <button class="btn btn-primary" type="button">Add to Watchlist</button>
                     </a>
                 {% endif %}
             {% endif %}
         </div>
         <div class="col-6">
-            {% if not user.is_authenticated %}
+            {% if not listing.is_active %}
                 <p>
-                    <br>
-                    <a href="{% url 'login' %}">Log In</a> to place a bid for this item.
-                    <br>
-                    Don't have an account? <a href="{% url 'register' %}">Register now.</a>
+                    This auction is closed. You cannot place bids for this item anymore.
+                    {% if listing.highest_bid.bidder == user %}
+                    <br><strong>Congratulations! You have won this auction!</strong>
+                    {% endif %}
                 </p>
-            {% elif user != listing.owner %}
-                <h5>Make a bid:</h5>
-                <form action="{% url 'new_bid' listing.id %}" method="POST">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <input required class="form-control" type="number" name="bid_amount" min="{{min_bid}}" placeholder="{{min_bid}}">
-                    </div>
-                    <input class="btn btn-primary" type="submit" value="Place Bid">
-                </form>
             {% else %}
-                <p>TODO: Enable closing this auction!</p>                    
+                {% if not user.is_authenticated %}
+                    <p>
+                        <br>
+                        <a href="{% url 'login' %}">Log In</a> to place a bid for this item.
+                        <br>
+                        Don't have an account? <a href="{% url 'register' %}">Register now.</a>
+                    </p>
+                {% elif user != listing.owner %}
+                    <h5>Make a bid:</h5>
+                    <form action="{% url 'new_bid' listing.id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <input required class="form-control" type="number" name="bid_amount" min="{{min_bid}}" placeholder="{{min_bid}}">
+                        </div>
+                        <input class="btn btn-primary" type="submit" value="Place Bid">
+                    </form>
+                {% else %}
+                    <a href="{% url 'close_auction' listing.id %}">
+                        <button class="btn btn-primary" type="button">Close this auction</button>
+                    </a>     
+                {% endif %}
             {% endif %}
         </div>
     </div>

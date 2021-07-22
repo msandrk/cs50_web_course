@@ -13,12 +13,12 @@ from .models import User, Listing, Bid
 class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
-        exclude = ['created', 'owner', 'active', 'highest_bid']
+        exclude = ['created', 'owner', 'is_active', 'highest_bid']
 
 @require_http_methods(["GET"])
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/index.html", {
-        "listings": Listing.objects.filter(active=True)
+        "listings": Listing.objects.filter(is_active=True)
     })
 
 @require_http_methods(["GET", "POST"])
@@ -113,6 +113,18 @@ def new_listing(request: HttpRequest) -> HttpResponse:
             "listing_form": ListingForm()
         })
 
+@login_required
+def close_auction(request: HttpRequest, listing_id: int) -> HttpResponse:
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+        listing.is_active = False
+        listing.save()
+        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+    except Listing.DoesNotExist:
+        return HttpResponseNotFound('No such listing.')
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError('Oops! Something bad happened, please try again later!')
+
 @require_http_methods(["GET"])
 def categories(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/categories.html", {
@@ -130,13 +142,13 @@ def category(request: HttpRequest, category: str) -> HttpResponse:
     name = category_names[list(category_ids).index(category)]
     return render(request, 'auctions/category.html', {
         "title": name,
-        "listings": Listing.objects.filter(active=True).filter(category=category)
+        "listings": Listing.objects.filter(is_active=True).filter(category=category)
     })
 
 @require_http_methods(["POST"])
 @login_required
 def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:    
-    listing = Listing.objects.filter(pk=listing_id).first()
+    listing = Listing.objects.get(pk=listing_id)
     if listing is None:
         return render(request, "auctions/not-found.html", {
             "message": "No such listing."
@@ -172,7 +184,7 @@ def watchlist(request: HttpRequest) -> HttpResponse:
 def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
-
+        print(f"\nadd_to_watchlist: {request.method}\n")
         request.user.watchlist.add(listing)
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
     except Listing.DoesNotExist:
@@ -184,7 +196,7 @@ def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
 def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
-
+        print(f"\nremove_from_watchlist: {request.method}\n")
         request.user.watchlist.remove(listing)
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
     except Listing.DoesNotExist:
