@@ -1,9 +1,12 @@
 {% extends "auctions/layout.html" %}
+{% block title %}
+    Create new listing
+{% endblock %}
 
 {% block body %}
     <h2>Create a new listing</h2>
     {% if error_field_message %}
-        <h5 style="color: red;">{{ error_field_message[0]}}: {{ error_field_message[1]}}</h5>
+        <h5 style="color: red;">{{ error_field_message.0}}: {{ error_field_message.1}}</h5>
     {% endif %}
     <form method="POST" action="{% url 'new_listing' %}">
         {% csrf_token %}

@@ -1,0 +1,58 @@
+{% extends 'auctions/layout.html' %}
+
+{% block title %}
+My Activity
+{% endblock %}
+
+{% block body %}
+    <div class="row">
+        <div class="col-6" style="border-right: 1px solid lightgrey;">
+            <h5>Items listed by you:</h5>
+            <ul>
+                {% for listing in owned_listings %}
+                    <li>
+                        <article>
+                            <h6>
+                                <a href="{% url 'listing' listing.id %}">{{ listing }}</a>
+                            </h6>
+                            
+                            <p>{{ listing.description }}</p>
+                            <p><img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} witdh="150" height="150"></p>
+                            <p>Starting price: ${{ listing.starting_price }}</p>
+                            <small>Created on: {{ listing.created }}</small>
+                        </article>
+                    </li>
+                {% empty %}
+                    <li>
+                        <h6>You haven't listed any items so far.</h6>
+                        <br>
+                        You can create your first listing <a href="{% url 'new_listing' %}">here.</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="col-6">
+            <h5>Items you bidded on:</h5>
+            <ul>
+                {% for listing in bidded_listings %}
+                    <li>
+                        <article>
+                            <h6>
+                                <a href="{% url 'listing' listing.id %}">{{ listing }}</a>
+                            </h6>
+                            <p>{{ listing.description }}</p>
+                            <p><img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} witdh="100" height="100"></p>
+                            <small>Created on: {{ listing.created }}</small>
+                        </article>
+                    </li>
+                {% empty %}
+                    <li>
+                        <h6>You haven't made any bidds so far.</h6>
+                        <br>
+                        You can place bids on any of currently available listings found <a href="{% url 'index'%}">here.</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

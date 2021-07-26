@@ -7,7 +7,7 @@
     <li>
         <article>
             <h5>
-                <a href="{% url 'listing' listing.id %}">{{ listing.title }}: ${{listing.highest_bid.amount|default:listing.starting_price}}</a>
+                <a href="{% url 'listing' listing.id %}">{{ listing }}</a>
             </h5>
             <p>{{ listing.description }}</p>
             <p><img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} witdh="200" height="200"></p>

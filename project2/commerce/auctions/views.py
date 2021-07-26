@@ -13,7 +13,7 @@ from .models import User, Listing, Bid
 class ListingForm(forms.ModelForm):
     class Meta:
         model = Listing
-        exclude = ['created', 'owner', 'is_active', 'highest_bid']
+        exclude = ['created', 'owner', 'is_active']
 
 @require_http_methods(["GET"])
 def index(request: HttpRequest) -> HttpResponse:
@@ -78,13 +78,14 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
         
-        no_prev_bids = listing.highest_bid is None
+        no_prev_bids = not listing.bids.exists()
         
+        min_bid = listing.starting_price if no_prev_bids else listing.bids.first().amount + 1
+
         on_watchlist = listing.watchlist_users.filter(pk=request.user.id).exists()
-        print(on_watchlist)
         return render(request, 'auctions/listing.html', {
             "listing": Listing.objects.get(pk=listing_id),
-            "min_bid": listing.starting_price if no_prev_bids else listing.highest_bid.amount + 1,
+            "min_bid": min_bid,
             "no_prev_bids": no_prev_bids,
             "on_watchlist": on_watchlist
         })
@@ -159,13 +160,11 @@ def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
     except ValueError:
         return HttpResponseBadRequest(f"Bid must be an integer, {request.POST['bid_amount']} is not an integer")
     
-    min_bid = listing.starting_price if listing.highest_bid is None else listing.highest_bid.amount + 1
+    min_bid = listing.starting_price if not listing.bids.exists() else listing.bids.first().amount + 1
 
     if min_bid <= bid_amount:
-        bid = Bid(bidder=request.user, amount=bid_amount)
-        listing.highest_bid = bid
+        bid = Bid(bidder=request.user, amount=bid_amount, listing=listing)
         bid.save()
-        listing.save()
 
         return HttpResponseRedirect(reverse('listing', args=[listing.id]))
 
@@ -180,7 +179,7 @@ def watchlist(request: HttpRequest) -> HttpResponse:
     })
 
 @login_required
-# @require_http_methods(["POST"])
+@require_http_methods(["GET"])
 def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
@@ -193,6 +192,7 @@ def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
         return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
 
 @login_required
+@require_http_methods(["GET"])
 def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
@@ -203,3 +203,14 @@ def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse
         return HttpResponseNotFound('No such listing')
     except Listing.MultipleObjectsReturned:
         return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
+
+@login_required
+@require_http_methods(["GET"])
+def activity(request: HttpRequest) -> HttpResponse:
+    owned_listings = Listing.objects.filter(owner=request.user)
+    bidded_listings = {bid.listing for bid in Bid.objects.filter(bidder=request.user)}
+    return render(request, 'auctions/activity.html', {
+        "owned_listings": owned_listings,
+        "bidded_listings": bidded_listings
+    })
+    
