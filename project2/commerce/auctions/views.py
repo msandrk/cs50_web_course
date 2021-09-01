@@ -15,6 +15,16 @@ class ListingForm(forms.ModelForm):
         model = Listing
         exclude = ['created', 'owner', 'is_active']
 
+class BiddingForm(forms.ModelForm):
+    
+    class Meta:
+        model = Bid
+        fields = ['amount']
+        labels = {
+            'amount': ''
+        }
+    
+
 @require_http_methods(["GET"])
 def index(request: HttpRequest) -> HttpResponse:
     return render(request, "auctions/index.html", {
@@ -73,22 +83,53 @@ def register(request: HttpRequest) -> HttpResponse:
     else:
         return render(request, "auctions/register.html")
 
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "POST"])
 def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
-        
+
         no_prev_bids = not listing.bids.exists()
-        
+
         min_bid = listing.starting_price if no_prev_bids else listing.bids.first().amount + 1
 
         on_watchlist = listing.watchlist_users.filter(pk=request.user.id).exists()
-        return render(request, 'auctions/listing.html', {
-            "listing": Listing.objects.get(pk=listing_id),
+
+        cntxt = {
+            "listing": listing,
             "min_bid": min_bid,
             "no_prev_bids": no_prev_bids,
-            "on_watchlist": on_watchlist
-        })
+            "on_watchlist": on_watchlist,
+            "bidding_form": BiddingForm(auto_id=False, initial={'amount': min_bid})
+        }
+
+        if request.method == "GET":
+            # import pdb
+            # breakpoint()
+            return render(request, 'auctions/listing.html', cntxt)
+        
+        elif request.method == "POST":
+            try:
+                form = BiddingForm(request.POST)
+                
+                if not form.is_valid():
+                    cntxt["bidding_form"] = form
+                    return render(request, "auctions/listing.html", cntxt, status=500)
+                
+                bid_amount = form.cleaned_data['amount']
+                if min_bid >  bid_amount:
+                    form.add_error('amount', f'Minimal bid not met! Bid must be at least ${min_bid}')
+                    cntxt['bidding_form'] = form
+                    return render(request, "auctions/listing.html", cntxt, status=500)
+
+                else:
+                    bid = Bid(bidder=request.user, amount=bid_amount, listing=listing)
+                    bid.save()
+            
+                    return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+
+            except ValueError:
+                return render(request, 'auctions/listing.html', cntxt, status=500)
+
     except Listing.DoesNotExist:
         return HttpResponseNotFound('No such listing!')
     except Listing.MultipleObjectsReturned:
@@ -146,30 +187,11 @@ def category(request: HttpRequest, category: str) -> HttpResponse:
         "listings": Listing.objects.filter(is_active=True).filter(category=category)
     })
 
-@require_http_methods(["POST"])
+
 @login_required
-def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:    
-    listing = Listing.objects.get(pk=listing_id)
-    if listing is None:
-        return render(request, "auctions/not-found.html", {
-            "message": "No such listing."
-        }, status=404)
-
-    try:
-        bid_amount = int(request.POST['bid_amount'])
-    except ValueError:
-        return HttpResponseBadRequest(f"Bid must be an integer, {request.POST['bid_amount']} is not an integer")
-    
-    min_bid = listing.starting_price if not listing.bids.exists() else listing.bids.first().amount + 1
-
-    if min_bid <= bid_amount:
-        bid = Bid(bidder=request.user, amount=bid_amount, listing=listing)
-        bid.save()
-
-        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-
-    else:
-        return HttpResponseBadRequest(content=f"Minimum bid not met! Bid must be at least {min_bid}")
+@require_http_methods(["POST"])
+def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
+    pass
 
 @login_required
 @require_http_methods(["GET"])

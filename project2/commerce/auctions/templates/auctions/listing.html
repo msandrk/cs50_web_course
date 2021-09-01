@@ -30,7 +30,7 @@
             {% if user.is_authenticated and user != listing.owner and listing.is_active %} 
                 {% if on_watchlist %}
                     <a href="{% url 'remove_from_watchlist' listing.id %}">
-                        <button class="btn  btn-primary" type="button">Remove from Watchlist</button>
+                        <button class="btn  btn-secondary" type="button">Remove from Watchlist</button>
                     </a>
                 {% else %}
                     <a href="{% url 'add_to_watchlist' listing.id %}">
@@ -57,11 +57,9 @@
                     </p>
                 {% elif user != listing.owner %}
                     <h5>Make a bid:</h5>
-                    <form action="{% url 'new_bid' listing.id %}" method="POST">
+                    <form action="{% url 'listing' listing.id %}" method="POST">
                         {% csrf_token %}
-                        <div class="form-group">
-                            <input required class="form-control" type="number" name="bid_amount" min="{{min_bid}}" placeholder="{{min_bid}}">
-                        </div>
+                        {{ bidding_form.as_p }}
                         <input class="btn btn-primary" type="submit" value="Place Bid">
                     </form>
                 {% else %}

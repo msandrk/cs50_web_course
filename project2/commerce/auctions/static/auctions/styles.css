@@ -1,3 +1,15 @@
 body {
     padding: 10px;
 }
+
+.errorlist {
+    padding-left: -15px;
+}
+
+.errorlist li {
+    color: red;
+    font-size: 0.9rem;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
