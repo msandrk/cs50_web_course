@@ -27,7 +27,6 @@ class Listing(models.Model):
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
-        # price = self.starting_price if self.highest_bid is None else self.highest_bid.amount
         price = self.starting_price if not self.bids.exists() else self.bids.first().amount
         return f"{self.title}: ${price}"
     
@@ -43,3 +42,13 @@ class Bid(models.Model):
 
     def __str__(self):
         return f"Bidder: {self.bidder}, Listing: {self.listing.title} Bid: ${self.amount}"
+
+class Comment(models.Model):
+    content = models.TextField(max_length=3000)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_comments')
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name='listing_comments')
+    created = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.owner}: {self.content}"

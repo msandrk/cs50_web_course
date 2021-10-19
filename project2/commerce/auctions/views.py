@@ -1,13 +1,14 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.forms import widgets
 from django.views.decorators.http import require_http_methods
 from django.db import IntegrityError
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError, HttpResponseBadRequest
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django import forms
 
-from .models import User, Listing, Bid
+from .models import User, Listing, Bid, Comment
 
 
 class ListingForm(forms.ModelForm):
@@ -23,7 +24,17 @@ class BiddingForm(forms.ModelForm):
         labels = {
             'amount': ''
         }
-    
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['content']
+        labels = {
+            'content': ''
+        }
+        widgets = {
+            'content': forms.Textarea(attrs={'cols': 45, 'rows': 1.5, 'placeholder': 'Write a comment...'})
+        }
 
 @require_http_methods(["GET"])
 def index(request: HttpRequest) -> HttpResponse:
@@ -99,12 +110,12 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
             "min_bid": min_bid,
             "no_prev_bids": no_prev_bids,
             "on_watchlist": on_watchlist,
-            "bidding_form": BiddingForm(auto_id=False, initial={'amount': min_bid})
+            "bidding_form": BiddingForm(auto_id=False, initial={'amount': min_bid}),
+            "comment_form": CommentForm(auto_id=False),
+            "comments": listing.listing_comments.all()
         }
 
         if request.method == "GET":
-            # import pdb
-            # breakpoint()
             return render(request, 'auctions/listing.html', cntxt)
         
         elif request.method == "POST":
@@ -191,7 +202,25 @@ def category(request: HttpRequest, category: str) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
-    pass
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+
+        form = CommentForm(request.POST)
+        
+        if not form.is_valid():
+            pass
+        
+        comment = form.save(commit=False)
+        comment.owner = request.user
+        comment.listing = listing
+        comment.save()
+    
+        return HttpResponseRedirect(reverse('listing', args=[listing_id]))
+
+    except Listing.DoesNotExistError:
+        return HttpResponseNotFound('No listing with specified id')
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
 
 @login_required
 @require_http_methods(["GET"])

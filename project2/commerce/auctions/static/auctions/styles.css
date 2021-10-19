@@ -13,3 +13,34 @@ body {
     margin: 0;
     padding: 0;
 }
+
+#comment-form textarea {
+    width: 98%;
+    height: 85%;
+    resize: none;
+    border: 1px solid rgb(175, 175, 175);
+    border-radius: 8px;
+    padding: 5px 6px 1px 6px;
+}
+
+#comment-form textarea:focus {
+    outline: 1px solid rgb(98, 160, 226);
+}
+
+#comment-form textarea:hover {
+    border: 1px solid rgb(98, 160, 226);
+}
+
+#comment-form input[type="submit"] {
+    padding: 4px 12px;
+}
+
+.single-comment{
+    border-top: 1px solid lightgrey;
+    padding: 5px 10px;
+    margin-left: 15px;
+}
+
+.single-comment h6{
+    font-weight: 600;
+}

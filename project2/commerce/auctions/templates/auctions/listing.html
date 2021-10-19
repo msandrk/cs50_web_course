@@ -5,8 +5,9 @@
 {% endblock %}
 
 {% block body %}
-
+    
     <div class="row">
+        <!-- LISTING INFO DISPLAY -->
         <div class="col-6">
             <h3>{{ listing.title }}</h3>
             <article>
@@ -38,7 +39,9 @@
                     </a>
                 {% endif %}
             {% endif %}
-        </div>
+        </div> <!-- END LISTING DISPLAY -->
+
+        <!-- BIDDING FORM  -->
         <div class="col-6">
             {% if not listing.is_active %}
                 <p>
@@ -68,6 +71,45 @@
                     </a>     
                 {% endif %}
             {% endif %}
+        </div>
+    </div> <!-- END BIDDING FORM -->
+    <hr>
+    <!-- COMMENT SECTION -->
+    <div class="row justify-content-center">
+        <div class="col-11">
+            <h5>Comments</h5>
+            <div class="row">
+                {% if not user.is_authenticated %}
+                    <div class="col">
+                        <p class="small">
+                            <a href="{% url 'login' %}">Log In</a> to post a comment.
+                            Don't have an account? <a href="{% url 'register' %}">Register now.</a>
+                        </p>
+                    </div>
+                {% else %}
+                <div class="col-12">
+                    <form id="comment-form" method="POST" action="{% url 'post_comment' listing.id %}">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-8">
+                                {{ comment_form }}
+                            </div>
+                            <div class="col-3">
+                                <input class="btn btn-primary" type="submit" value="Comment">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% for comment in comments %}
+                <div class="row mt-1">
+                    <article class="col-9 single-comment">
+                        <h6>{{ comment.owner }}</h6> 
+                        <p>{{ comment.content }}</p>
+                    </article>    
+                </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}
