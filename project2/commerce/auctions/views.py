@@ -58,7 +58,7 @@ def login_view(request: HttpRequest) -> HttpResponse:
         else:
             return render(request, "auctions/login.html", {
                 "message": "Invalid username and/or password."
-            })
+            }, status=401)
     else:
         return render(request, "auctions/login.html")
 
@@ -79,7 +79,7 @@ def register(request: HttpRequest) -> HttpResponse:
         if password != confirmation:
             return render(request, "auctions/register.html", {
                 "message": "Passwords must match."
-            })
+            }, status=400)
 
         # Attempt to create new user
         try:
@@ -88,7 +88,7 @@ def register(request: HttpRequest) -> HttpResponse:
         except IntegrityError:
             return render(request, "auctions/register.html", {
                 "message": "Username already taken."
-            })
+            }, status=400)
         login(request, user)
         return HttpResponseRedirect(reverse("index"))
     else:
@@ -142,9 +142,11 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
                 return render(request, 'auctions/listing.html', cntxt, status=500)
 
     except Listing.DoesNotExist:
-        return HttpResponseNotFound('No such listing!')
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
-        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
 
 @require_http_methods(["GET", "POST"])
 @login_required
@@ -156,7 +158,7 @@ def new_listing(request: HttpRequest) -> HttpResponse:
             return render(request, 'auctions/new-listing.html', {
                 "listing_form": form,
                 "error_field_message": next(iter(form.errors.items))
-            })
+            }, status=400)
         listing = form.save(commit=False)
         listing.owner = request.user
         listing.save()
@@ -174,9 +176,11 @@ def close_auction(request: HttpRequest, listing_id: int) -> HttpResponse:
         listing.save()
         return HttpResponseRedirect(reverse('listing', args=[listing.id]))
     except Listing.DoesNotExist:
-        return HttpResponseNotFound('No such listing.')
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
-        return HttpResponseServerError('Oops! Something bad happened, please try again later!')
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
 
 @require_http_methods(["GET"])
 def categories(request: HttpRequest) -> HttpResponse:
@@ -190,7 +194,7 @@ def category(request: HttpRequest, category: str) -> HttpResponse:
     category = category.upper()
 
     if category not in category_ids:
-        return HttpResponseNotFound("No such category!")
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No category with an id={category}!")
     
     name = category_names[list(category_ids).index(category)]
     return render(request, 'auctions/category.html', {
@@ -218,9 +222,11 @@ def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
 
     except Listing.DoesNotExistError:
-        return HttpResponseNotFound('No listing with specified id')
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
-        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
 
 @login_required
 @require_http_methods(["GET"])
@@ -238,9 +244,11 @@ def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
         request.user.watchlist.add(listing)
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
     except Listing.DoesNotExist:
-        return HttpResponseNotFound('No such listing!')
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
-        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
 
 @login_required
 @require_http_methods(["GET"])
@@ -251,15 +259,17 @@ def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse
         request.user.watchlist.remove(listing)
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
     except Listing.DoesNotExist:
-        return HttpResponseNotFound('No such listing')
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
-        return HttpResponseServerError('Sorry! Something bad happened, please try again later!')
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
 
 @login_required
 @require_http_methods(["GET"])
 def activity(request: HttpRequest) -> HttpResponse:
     owned_listings = Listing.objects.filter(owner=request.user)
-    bidded_listings = {bid.listing for bid in Bid.objects.filter(bidder=request.user)}
+    bidded_listings = { bid.listing for bid in Bid.objects.filter(bidder=request.user) }
     return render(request, 'auctions/activity.html', {
         "owned_listings": owned_listings,
         "bidded_listings": bidded_listings
