@@ -8,12 +8,19 @@
     {% if field is not None %}
         An error occured for field <strong>{{ field }}</strong> with following error message:<br>
     {% endif %}
-    <p class="errorlist" style="color: red;">{{ msg }}</p>
-    <p>You will be redirected in 5 seconds...</p>
-{#     {% if redirect_arg is None %} }
+    
+    <p class="errorlist" style="color: red;">
+        {{ msg }}
+    </p>
+    
+    <p>
+        You will be redirected in 5 seconds...
+    </p>
+    
+    {% if redirect_arg is None %}
         <meta http-equiv="refresh" content="6; url={% url redirect_to %}">-
 
-    {# {% else %} }
+    {% else %}
         <meta http-equiv="refresh" content="6; url={% url redirect_to redirect_arg %}">
-    {# {% endif %} }
+    {% endif %}
 {% endblock %}
