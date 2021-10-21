@@ -33,7 +33,9 @@ class CommentForm(forms.ModelForm):
             'content': ''
         }
         widgets = {
-            'content': forms.Textarea(attrs={'cols': 45, 'rows': 1.5, 'placeholder': 'Write a comment...'})
+            'content': forms.Textarea(
+                attrs={'cols': 45, 'rows': 1.5, 'placeholder': 'Write a comment...'}
+                )
         }
 
 @require_http_methods(["GET"])
@@ -94,7 +96,7 @@ def register(request: HttpRequest) -> HttpResponse:
     else:
         return render(request, "auctions/register.html")
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
@@ -105,7 +107,7 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
 
         on_watchlist = listing.watchlist_users.filter(pk=request.user.id).exists()
 
-        cntxt = {
+        return render(request, 'auctions/listing.html', {
             "listing": listing,
             "min_bid": min_bid,
             "no_prev_bids": no_prev_bids,
@@ -113,33 +115,7 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
             "bidding_form": BiddingForm(auto_id=False, initial={'amount': min_bid}),
             "comment_form": CommentForm(auto_id=False),
             "comments": listing.listing_comments.all()
-        }
-
-        if request.method == "GET":
-            return render(request, 'auctions/listing.html', cntxt)
-        
-        elif request.method == "POST":
-            try:
-                form = BiddingForm(request.POST)
-                
-                if not form.is_valid():
-                    cntxt["bidding_form"] = form
-                    return render(request, "auctions/listing.html", cntxt, status=500)
-                
-                bid_amount = form.cleaned_data['amount']
-                if min_bid >  bid_amount:
-                    form.add_error('amount', f'Minimal bid not met! Bid must be at least ${min_bid}')
-                    cntxt['bidding_form'] = form
-                    return render(request, "auctions/listing.html", cntxt, status=500)
-
-                else:
-                    bid = Bid(bidder=request.user, amount=bid_amount, listing=listing)
-                    bid.save()
-            
-                    return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-
-            except ValueError:
-                return render(request, 'auctions/listing.html', cntxt, status=500)
+        })
 
     except Listing.DoesNotExist:
         return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
@@ -147,6 +123,51 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
         return HttpResponseServerError(
             'Sorry! Something went wrong while processing your request, please try again later!'
             )
+
+@login_required
+@require_http_methods(["POST"])
+def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+
+        no_prev_bids = not listing.bids.exists()
+
+        min_bid = listing.starting_price if no_prev_bids else listing.bids.first().amount + 1
+
+        form = BiddingForm(request.POST)
+
+        cntxt = {
+            'redirect_to': 'listing',
+            'redirect_arg': listing_id
+        }
+
+        if not form.is_valid():
+            cntxt['field'], cntxt['msg'] = form.errors.popitem()
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=500)
+
+        bid_amount = form.cleaned_data['amount']
+        if min_bid >  bid_amount:
+            cntxt['msg'] = f'Minimal bid not met! Bid must be at least ${min_bid}'
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=500)
+
+        else:
+            bid = Bid(bidder=request.user, amount=bid_amount, listing=listing)
+            bid.save()
+    
+            return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+
+    except Listing.DoesNotExist:
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
+    except ValueError as e:
+        return render(request, 'auctions/error-message.html', {
+            'msg': str(e).capitalize(),
+            'redirect_to': 'listing',
+            'redirect_arg': listing_id
+        }, status=500)
 
 @require_http_methods(["GET", "POST"])
 @login_required
@@ -212,7 +233,13 @@ def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
         form = CommentForm(request.POST)
         
         if not form.is_valid():
-            pass
+            field, err_msg = form.errors.popitem()
+            return render(request, 'auctions/error-msg-redirect.html', {
+                'field': field,
+                'msg': err_msg,
+                'redirect_to': 'listing',
+                'redirect_arg': listing_id
+            }, status=400)
         
         comment = form.save(commit=False)
         comment.owner = request.user
@@ -221,7 +248,7 @@ def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
     
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
 
-    except Listing.DoesNotExistError:
+    except Listing.DoesNotExist:
         return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
         return HttpResponseServerError(

@@ -60,7 +60,7 @@
                     </p>
                 {% elif user != listing.owner %}
                     <h5>Make a bid:</h5>
-                    <form action="{% url 'listing' listing.id %}" method="POST">
+                    <form action="{% url 'new_bid' listing.id %}" method="POST">
                         {% csrf_token %}
                         {{ bidding_form.as_p }}
                         <input class="btn btn-primary" type="submit" value="Place Bid">
@@ -111,5 +111,5 @@
                 </div>
             {% endfor %}
         </div>
-    </div>
+    </div> <!-- END COMMENT SECTION -->
 {% endblock %}
