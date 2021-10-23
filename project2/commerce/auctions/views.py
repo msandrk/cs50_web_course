@@ -1,10 +1,9 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.forms import widgets
 from django.views.decorators.http import require_http_methods
 from django.db import IntegrityError
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError, HttpResponseBadRequest
-from django.shortcuts import redirect, render
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
+from django.shortcuts import render
 from django.urls import reverse
 from django import forms
 
@@ -34,7 +33,7 @@ class CommentForm(forms.ModelForm):
         }
         widgets = {
             'content': forms.Textarea(
-                attrs={'cols': 45, 'rows': 1.5, 'placeholder': 'Write a comment...'}
+                attrs={'cols': 45, 'rows': 1, 'placeholder': 'Write a comment...'}
                 )
         }
 
@@ -101,16 +100,17 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
 
-        no_prev_bids = not listing.bids.exists()
-
-        min_bid = listing.starting_price if no_prev_bids else listing.bids.first().amount + 1
+        highest_bidder = listing.bids.first().bidder if listing.bids.exists() else None
+        # If no previous bids, minimum new bid is equal to the starting price of an item.
+        # Else new bid must be at least +1 of the current value.
+        min_bid = listing.starting_price if not highest_bidder else listing.bids.first().amount + 1
 
         on_watchlist = listing.watchlist_users.filter(pk=request.user.id).exists()
 
         return render(request, 'auctions/listing.html', {
             "listing": listing,
             "min_bid": min_bid,
-            "no_prev_bids": no_prev_bids,
+            "highest_bidder": highest_bidder,
             "on_watchlist": on_watchlist,
             "bidding_form": BiddingForm(auto_id=False, initial={'amount': min_bid}),
             "comment_form": CommentForm(auto_id=False),
@@ -127,28 +127,34 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
+    """This view is called upon submission of the bidding form on the listing page. If
+    bid is succesfully submitted, it redirects to the listing for which the bid was
+    made. Else a page with the error message is displayed which will also eventualy
+    redirect to the listing page.
+    """
     try:
         listing = Listing.objects.get(pk=listing_id)
-
-        no_prev_bids = not listing.bids.exists()
-
-        min_bid = listing.starting_price if no_prev_bids else listing.bids.first().amount + 1
-
-        form = BiddingForm(request.POST)
 
         cntxt = {
             'redirect_to': 'listing',
             'redirect_arg': listing_id
         }
 
+        if request.user == listing.owner:
+            cntxt['msg'] = 'Cannot place a bid for a listing that you are an owner of!'
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=400)
+
+        form = BiddingForm(request.POST)
+
         if not form.is_valid():
             cntxt['field'], cntxt['msg'] = form.errors.popitem()
-            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=500)
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=400)
 
+        min_bid = listing.starting_price if not listing.bids.exists() else listing.bids.first().amount + 1
         bid_amount = form.cleaned_data['amount']
         if min_bid >  bid_amount:
             cntxt['msg'] = f'Minimal bid not met! Bid must be at least ${min_bid}'
-            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=500)
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=400)
 
         else:
             bid = Bid(bidder=request.user, amount=bid_amount, listing=listing)
@@ -167,35 +173,33 @@ def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
             'msg': str(e).capitalize(),
             'redirect_to': 'listing',
             'redirect_arg': listing_id
-        }, status=500)
-
-@require_http_methods(["GET", "POST"])
-@login_required
-def new_listing(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        form = ListingForm(request.POST)
-        
-        if not form.is_valid():
-            return render(request, 'auctions/new-listing.html', {
-                "listing_form": form,
-                "error_field_message": next(iter(form.errors.items))
-            }, status=400)
-        listing = form.save(commit=False)
-        listing.owner = request.user
-        listing.save()
-        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-    else:
-        return render(request, 'auctions/new-listing.html', {
-            "listing_form": ListingForm()
-        })
+        }, status=400)
 
 @login_required
 def close_auction(request: HttpRequest, listing_id: int) -> HttpResponse:
+    """This view is called when an owner of an active listing wishes to close an
+    auction and does so following a dedicated link. After a successful closure
+    of an auction, user is redirected to the listing.
+    """
     try:
         listing = Listing.objects.get(pk=listing_id)
+
+        cntxt = {
+            'redirect_to': 'listing',
+            'redirect_arg': listing_id
+        }
+        if request.user != listing.owner:
+            cntxt['msg'] =  'Cannot close an auction for listing you are not an owner of!'
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=403)
+        
+        if not listing.is_active:
+            cntxt['msg'] = 'Auction for this listing was already closed!'
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=400)
+        
         listing.is_active = False
         listing.save()
         return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+
     except Listing.DoesNotExist:
         return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
     except Listing.MultipleObjectsReturned:
@@ -203,30 +207,14 @@ def close_auction(request: HttpRequest, listing_id: int) -> HttpResponse:
             'Sorry! Something went wrong while processing your request, please try again later!'
             )
 
-@require_http_methods(["GET"])
-def categories(request: HttpRequest) -> HttpResponse:
-    return render(request, "auctions/categories.html", {
-        "categories": [(label.lower(), name) for label, name in Listing.LISTING_CATEGORIES]
-    })
-
-@require_http_methods("GET")
-def category(request: HttpRequest, category: str) -> HttpResponse:
-    category_ids, category_names = zip(*Listing.LISTING_CATEGORIES)
-    category = category.upper()
-
-    if category not in category_ids:
-        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No category with an id={category}!")
-    
-    name = category_names[list(category_ids).index(category)]
-    return render(request, 'auctions/category.html', {
-        "title": name,
-        "listings": Listing.objects.filter(is_active=True).filter(category=category)
-    })
-
-
 @login_required
 @require_http_methods(["POST"])
 def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
+    """This view is called upon a submission of comment form on the listing page. If 
+    form validation fails, a page with corresponding error message is returned. The
+    user is eventually redirected back to the listing page. If form validation is
+    successful, the user is also redirected back to the listing page.
+    """
     try:
         listing = Listing.objects.get(pk=listing_id)
 
@@ -256,6 +244,50 @@ def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
             )
 
 @login_required
+@require_http_methods(["GET", "POST"])
+def new_listing(request: HttpRequest) -> HttpResponse:
+    # If method is POST, try to create a new listing based on the submitted form.
+    if request.method == "POST":
+        form = ListingForm(request.POST)
+        
+        if not form.is_valid():
+            return render(request, 'auctions/new-listing.html', {
+                "listing_form": form,
+                "error_field_message": next(iter(form.errors.items))
+            }, status=400)
+        
+        listing = form.save(commit=False)
+        listing.owner = request.user
+        listing.save()
+        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+    
+    # If method is GET just return the empty form.
+    else:
+        return render(request, 'auctions/new-listing.html', {
+            "listing_form": ListingForm()
+        })
+
+@require_http_methods(["GET"])
+def categories(request: HttpRequest) -> HttpResponse:
+    return render(request, "auctions/categories.html", {
+        "categories": [(label.lower(), name) for label, name in Listing.LISTING_CATEGORIES]
+    })
+
+@require_http_methods("GET")
+def category(request: HttpRequest, category: str) -> HttpResponse:
+    all_categories = { id: name for id, name in Listing.LISTING_CATEGORIES }
+    category = category.upper()
+
+    if category not in all_categories:
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No category with an id={category.lower()}!")
+    
+    name = all_categories[category]
+    return render(request, 'auctions/category.html', {
+        "title": name,
+        "listings": Listing.objects.filter(is_active=True).filter(category=category)
+    })
+
+@login_required
 @require_http_methods(["GET"])
 def watchlist(request: HttpRequest) -> HttpResponse:
     return render(request, 'auctions/watchlist.html', {
@@ -267,7 +299,12 @@ def watchlist(request: HttpRequest) -> HttpResponse:
 def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
-        print(f"\nadd_to_watchlist: {request.method}\n")
+        if request.user == listing.owner:
+            return render(request, 'auctions/error-msg-redirect.html', {
+                'msg': 'Cannot this listing to the watchlist, you are the owner of it.',
+                'redirect_to': 'listing',
+                'redirect_arg': listing_id
+            }, status=400)
         request.user.watchlist.add(listing)
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
     except Listing.DoesNotExist:
@@ -282,7 +319,6 @@ def add_to_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
 def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
         listing = Listing.objects.get(pk=listing_id)
-        print(f"\nremove_from_watchlist: {request.method}\n")
         request.user.watchlist.remove(listing)
         return HttpResponseRedirect(reverse('listing', args=[listing_id]))
     except Listing.DoesNotExist:

@@ -16,7 +16,7 @@
                 {% endwith %}
                 <p>{{ listing.description }}</p>
                 <h5>Current price:     
-                    {% if no_prev_bids %} 
+                    {% if not highest_bidder %} 
                         ${{ min_bid }}
                     {% else %}
                         ${{ min_bid|add:'-1' }} 
@@ -46,7 +46,7 @@
             {% if not listing.is_active %}
                 <p>
                     This auction is closed. You cannot place bids for this item anymore.
-                    {% if listing.highest_bid.bidder == user %}
+                    {% if highest_bidder == user %}
                         <br><strong>Congratulations! You have won this auction!</strong>
                     {% endif %}
                 </p>
