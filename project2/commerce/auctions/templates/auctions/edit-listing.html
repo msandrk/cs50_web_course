@@ -1,0 +1,16 @@
+{% extends 'auctions/layout.html' %}
+
+{% block title %}
+    Edit Listing
+{% endblock %}
+
+{% block body %}
+    {% if error_field_message %}
+        <h5 style="color: red;">{{ error_field_message.0}}: {{ error_field_message.1}}</h5>
+    {% endif %}
+    <form method="POST" action="{% url 'edit_listing' listing_id %}">
+        {% csrf_token %}
+        {{ edit_form.as_p }}
+        <input class="btn btn-primary" type="submit" value="Confirm Changes">
+    </form>
+{% endblock %}

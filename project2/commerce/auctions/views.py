@@ -15,8 +15,12 @@ class ListingForm(forms.ModelForm):
         model = Listing
         exclude = ['created', 'owner', 'is_active']
 
+class EditListingForm(forms.ModelForm):
+    class Meta:
+        model = Listing
+        fields = ['title', 'image_url', 'category']
+
 class BiddingForm(forms.ModelForm):
-    
     class Meta:
         model = Bid
         fields = ['amount']
@@ -95,6 +99,30 @@ def register(request: HttpRequest) -> HttpResponse:
     else:
         return render(request, "auctions/register.html")
 
+@login_required
+@require_http_methods(["GET", "POST"])
+def new_listing(request: HttpRequest) -> HttpResponse:
+    # If method is POST, try to create a new listing based on the submitted form.
+    if request.method == "POST":
+        form = ListingForm(request.POST)
+        
+        if not form.is_valid():
+            return render(request, 'auctions/new-listing.html', {
+                "listing_form": form,
+                "error_field_message": next(iter(form.errors.items))
+            }, status=400)
+        
+        listing = form.save(commit=False)
+        listing.owner = request.user
+        listing.save()
+        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
+    
+    # If method is GET just return the empty form.
+    else:
+        return render(request, 'auctions/new-listing.html', {
+            "listing_form": ListingForm()
+        })
+
 @require_http_methods(["GET"])
 def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
     try:
@@ -116,6 +144,93 @@ def listing(request: HttpRequest, listing_id: int) -> HttpResponse:
             "comment_form": CommentForm(auto_id=False),
             "comments": listing.listing_comments.all()
         })
+
+    except Listing.DoesNotExist:
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def edit_listing(request: HttpRequest, listing_id: int) -> HttpResponse:
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+
+        if request.user != listing.owner:
+            return render(request, 'auctions/error-msg-redirect.html', {
+                'msg': 'Cannot edit listings you are not an owner of.',
+                'redirect_to': 'listing',
+                'redirect_arg': listing_id
+            }, status=403)
+
+        if not listing.is_active:
+            return render(request, 'auctions/error-msg-redirect.html', {
+                'msg': 'Cannot edit a listing for which auction is already closed.',
+                'redirect_to': 'listing',
+                'redirect_arg': listing_id
+            }, status=400)
+
+        if request.method == "POST":
+            form = EditListingForm(request.POST)
+
+            if not form.is_valid():
+                return render(request, 'auctions/edit_listing.html', {
+                    'edit_form': form,
+                    'listing_id': listing_id,
+                    'error_field_message': next(iter(form.errors.items))
+                }, status=400)
+
+            listing.title = form.cleaned_data['title']
+            listing.image_url = form.cleaned_data['image_url']
+            listing.category = form.cleaned_data['category']
+            listing.save()
+
+            return HttpResponseRedirect(reverse('listing', args=[listing_id]))
+        else:
+            curr_content = {
+                'title': listing.title,
+                'image_url': listing.image_url,
+                'category': listing.category
+            }
+
+            return render(request, 'auctions/edit-listing.html', {
+                'edit_form': EditListingForm(initial=curr_content),
+                'listing_id': listing_id
+            })
+    except Listing.DoesNotExist:
+        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
+    except Listing.MultipleObjectsReturned:
+        return HttpResponseServerError(
+            'Sorry! Something went wrong while processing your request, please try again later!'
+            )
+
+@login_required
+@require_http_methods(["GET"])
+def close_auction(request: HttpRequest, listing_id: int) -> HttpResponse:
+    """This view is called when an owner of an active listing wishes to close an
+    auction and does so following a dedicated link. After a successful closure
+    of an auction, user is redirected to the listing.
+    """
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+
+        cntxt = {
+            'redirect_to': 'listing',
+            'redirect_arg': listing_id
+        }
+        if request.user != listing.owner:
+            cntxt['msg'] =  'Cannot close an auction for listing you are not an owner of!'
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=403)
+        
+        if not listing.is_active:
+            cntxt['msg'] = 'Auction for this listing was already closed!'
+            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=400)
+        
+        listing.is_active = False
+        listing.save()
+        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
 
     except Listing.DoesNotExist:
         return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
@@ -176,38 +291,6 @@ def new_bid(request: HttpRequest, listing_id: int) -> HttpResponse:
         }, status=400)
 
 @login_required
-def close_auction(request: HttpRequest, listing_id: int) -> HttpResponse:
-    """This view is called when an owner of an active listing wishes to close an
-    auction and does so following a dedicated link. After a successful closure
-    of an auction, user is redirected to the listing.
-    """
-    try:
-        listing = Listing.objects.get(pk=listing_id)
-
-        cntxt = {
-            'redirect_to': 'listing',
-            'redirect_arg': listing_id
-        }
-        if request.user != listing.owner:
-            cntxt['msg'] =  'Cannot close an auction for listing you are not an owner of!'
-            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=403)
-        
-        if not listing.is_active:
-            cntxt['msg'] = 'Auction for this listing was already closed!'
-            return render(request, 'auctions/error-msg-redirect.html', cntxt, status=400)
-        
-        listing.is_active = False
-        listing.save()
-        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-
-    except Listing.DoesNotExist:
-        return HttpResponseNotFound(f"<strong>NOT FOUND!</strong><br>No listing with an id={listing_id}!")
-    except Listing.MultipleObjectsReturned:
-        return HttpResponseServerError(
-            'Sorry! Something went wrong while processing your request, please try again later!'
-            )
-
-@login_required
 @require_http_methods(["POST"])
 def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
     """This view is called upon a submission of comment form on the listing page. If 
@@ -243,29 +326,6 @@ def post_comment(request: HttpRequest, listing_id: int) -> HttpResponse:
             'Sorry! Something went wrong while processing your request, please try again later!'
             )
 
-@login_required
-@require_http_methods(["GET", "POST"])
-def new_listing(request: HttpRequest) -> HttpResponse:
-    # If method is POST, try to create a new listing based on the submitted form.
-    if request.method == "POST":
-        form = ListingForm(request.POST)
-        
-        if not form.is_valid():
-            return render(request, 'auctions/new-listing.html', {
-                "listing_form": form,
-                "error_field_message": next(iter(form.errors.items))
-            }, status=400)
-        
-        listing = form.save(commit=False)
-        listing.owner = request.user
-        listing.save()
-        return HttpResponseRedirect(reverse('listing', args=[listing.id]))
-    
-    # If method is GET just return the empty form.
-    else:
-        return render(request, 'auctions/new-listing.html', {
-            "listing_form": ListingForm()
-        })
 
 @require_http_methods(["GET"])
 def categories(request: HttpRequest) -> HttpResponse:
