@@ -3,12 +3,15 @@
 {% block title %} Categories {% endblock %}
 
 {% block body %}
-<h3>Available Categories:</h3>
-<ul>
+<h4 class="body-title">Available Categories</h4>
+<ul class="list-unstyled">
     {% for label, name in categories %}
-        <li>
-            <a href="{% url 'category' label %}">{{ name }}</a>
-        </li>
+        <a class="index-listing-link" href="{% url 'category' label %}">
+            <li class="list-element">
+                {{ name }}
+            </li>
+        </a>
+        <hr>
     {% endfor %}
 </ul>
 {% endblock %}

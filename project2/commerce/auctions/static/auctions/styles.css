@@ -1,46 +1,89 @@
+*:focus {
+  outline: 1px solid #62a0e2; }
+
 body {
-    padding: 10px;
-}
+  padding: 10px;
+  color: #111; }
+
+input:not([type="submit"]) {
+  padding-left: 8px;
+  border: 1px solid #afafaf;
+  border-radius: 8px; }
+
+textarea {
+  resize: none;
+  border: 1px solid #afafaf;
+  border-radius: 8px;
+  padding: 4px 10px; }
+
+.nav {
+  border-top: 1px solid #62a0e2;
+  border-bottom: 1px solid #62a0e2;
+  border: 1px solid #62a0e2;
+  border-radius: 30px; }
+
+.nav-link {
+  color: #0069d9;
+  font-weight: 600; }
+
+.nav-link:hover {
+  background-color: #62a0e2;
+  color: #eee; }
+
+.first-nav-link:hover {
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px; }
+
+.body-title {
+  margin-bottom: 1em; }
+
+.index-listing-link {
+  color: #333;
+  text-decoration: none !important; }
+  .index-listing-link :hover {
+    color: #111; }
+
+.single-listing {
+  border: 1px solid lightgrey;
+  border-radius: 15px; }
+
+.img-fluid {
+  max-height: 30vh;
+  width: auto; }
 
 .errorlist {
-    padding-left: -15px;
-}
-
-.errorlist li {
+  padding-left: -15px; }
+  .errorlist li {
     color: red;
     font-size: 0.9rem;
     list-style-type: none;
     margin: 0;
-    padding: 0;
-}
+    padding: 0; }
 
 #comment-form textarea {
-    width: 98%;
-    height: 85%;
-    resize: none;
-    border: 1px solid rgb(175, 175, 175);
-    border-radius: 8px;
-    padding: 5px 6px 1px 6px;
-}
-
-#comment-form textarea:focus {
-    outline: 1px solid rgb(98, 160, 226);
-}
-
+  width: 98%;
+  height: 85%;
+  padding: 5px 6px 1px 6px; }
 #comment-form textarea:hover {
-    border: 1px solid rgb(98, 160, 226);
-}
-
+  border: 1px solid #62a0e2; }
 #comment-form input[type="submit"] {
-    padding: 4px 12px;
-}
+  padding: 4px 12px; }
 
-.single-comment{
-    border-top: 1px solid lightgrey;
-    padding: 5px 10px;
-    margin-left: 15px;
-}
+.single-comment {
+  border-top: 1px solid lightgrey;
+  padding: 5px 10px;
+  margin-left: 15px; }
+  .single-comment h6 {
+    font-weight: 600; }
 
-.single-comment h6{
-    font-weight: 600;
-}
+.important-msg {
+  color: red; }
+
+.logged-user-msg {
+  color: #333; }
+
+.list-element {
+  padding: 6px 18px;
+  font-weight: 600; }
+
+/*# sourceMappingURL=styles.css.map */

@@ -1,5 +1,8 @@
 lecture_codes/
 
+*.sass-cache/
+*.css.map
+
 *venv/
 __pycache__/
 */.vscode/

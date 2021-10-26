@@ -2,10 +2,10 @@
 
 {% block body %}
 
-    <h2>Register</h2>
+    <h4 class="body-title">Register</h4>
 
     {% if message %}
-        <div>{{ message }}</div>
+        <div class="important-msg errorlist">{{ message }}</div>
     {% endif %}
 
     <form action="{% url 'register' %}" method="post">

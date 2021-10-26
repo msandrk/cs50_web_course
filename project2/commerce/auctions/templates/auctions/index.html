@@ -1,22 +1,40 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-<h3>Active Listings</h3>
-<ul>
-    {% for listing in listings %}
-    <li>
-        <article>
-            <h5>
-                <a href="{% url 'listing' listing.id %}">{{ listing }}</a>
-            </h5>
-            <p>{{ listing.description }}</p>
-            <p><img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} witdh="200" height="200"></p>
-            
-        </article>
-    </li>
-    <hr>
-    {% empty %}
-    <p>No active listings at the moment.</p>>
+    <h4 class="body-title">Active Listings</h4>
+    {% for listing, curr_price in listings.items %}
+        <div class="listing-container">
+            <a class="index-listing-link" href="{% url 'listing' listing.id %}">
+                <article class="single-listing mb-1">
+                    <div class="row align-items-center justify-content-center mt-md-5 mb-md-5">
+                        <div class="col-4">
+                            <img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} class="img-fluid">
+                        </div>
+                        <div class="col-7">
+                            <div class="row align-items-top">
+                                <div class="col mb-3">
+                                    <strong>{{ listing.title }}</strong>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <p class="text-truncate text-justify">{{ listing.description }}</p>                                 
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-5">
+                                    <small>Created on: {{ listing.created }}</small>
+                                </div>
+                                <div class="col-7">
+                                    <p class="float-right"><strong>Price:</strong> ${{ curr_price }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>                
+                </article>
+            </a>
+        </div>
+        {% empty %}
+        <p>No active listings at the moment.</p>>
     {% endfor %}
-</ul>
 {% endblock %}

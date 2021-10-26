@@ -6,49 +6,73 @@ My Activity
 
 {% block body %}
     <div class="row">
-        <div class="col-6" style="border-right: 1px solid lightgrey;">
-            <h5>Items listed by you:</h5>
-            <ul>
-                {% for listing in owned_listings %}
-                    <li>
-                        <article>
-                            <h6>
-                                <a href="{% url 'listing' listing.id %}">{{ listing }}</a>
-                            </h6>
-                            
-                            <p>{{ listing.description }}</p>
-                            <p><img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} witdh="150" height="150"></p>
-                            <p>Starting price: ${{ listing.starting_price }}</p>
-                            <small>Created on: {{ listing.created }}</small>
-                        </article>
-                    </li>
+        <div class="col-6" a>
+            <h4 class="body-title">Items listed by you</h4>
+            <ul class="list-unstyled">
+                {% for listing, curr_price in owned_listings.items %}
+                    <a class="index-listing-link" href="{% url 'listing' listing.id %}"> 
+                        <li>
+                            <article class="mb-2 single-listing">
+                                <div class="row align-items-center justify-content-center">
+                                    <div class="col-4">
+                                        <img class="img-fluid" src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }}>
+                                    </div>
+                                    <div class="col-7">
+                                        <div class="row align-items-top">
+                                            <div class="col mb-2">
+                                                <strong>{{ listing.title }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="row align-items-top">
+                                            <div class="col">
+                                                <p>Price: ${{ curr_price }}</p>
+                                                <small class="float-right">Created on: {{ listing.created }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </li>
+                    </a>
                 {% empty %}
-                    <li>
-                        <h6>You haven't listed any items so far.</h6>
-                        <br>
-                        You can create your first listing <a href="{% url 'new_listing' %}">here.</a>
+                    <li class="mt-4">
+                            <h6>You haven't listed any items so far.</h6>
+                            You can create your first listing <a href="{% url 'new_listing' %}">here.</a>
                     </li>
                 {% endfor %}
             </ul>
         </div>
         <div class="col-6">
-            <h5>Items you bidded on:</h5>
-            <ul>
-                {% for listing in bidded_listings %}
-                    <li>
-                        <article>
-                            <h6>
-                                <a href="{% url 'listing' listing.id %}">{{ listing }}</a>
-                            </h6>
-                            <p>{{ listing.description }}</p>
-                            <p><img src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }} witdh="100" height="100"></p>
-                            <small>Created on: {{ listing.created }}</small>
-                        </article>
-                    </li>
+            <h4>Items you bidded on</h4>
+            <ul class="list-unstyled">
+                {% for listing, curr_price in bidded_listings.items %}
+                    <a class="index-listing-link" href="{% url 'listing' listing.id %}">
+                        <li>
+                            <article class="single-listing mb-1">
+                                <div class="row align-items-center justify-content-center">
+                                    <div class="col-4">
+                                        <img class="img-fluid" src={{ listing.image_url|default:'static/imgs/no_image_available.jpg' }}>
+                                    </div>
+                                    <div class="col-7">
+                                        <div class="row align-items-top">
+                                            <div class="col mb-3">
+                                                <strong>{{ listing.title }}</strong>
+                                            </div>
+                                        </div>
+                                        <div class="row align-items-top">
+                                            <div class="col">
+                                                <p>Price: ${{ curr_price }}</p>
+                                                <small class="float-right">Created on: {{ listing.created }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </li>
+                    </a>
                 {% empty %}
-                    <li>
+                    <li class="mt-4">
                         <h6>You haven't made any bidds so far.</h6>
-                        <br>
                         You can place bids on any of currently available listings found <a href="{% url 'index'%}">here.</a>
                     </li>
                 {% endfor %}

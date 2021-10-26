@@ -5,14 +5,17 @@
 {% endblock %}
 
 {% block body %}
-<h5>Listings on your watchlist:</h5>
-<ul>
+<h4 class="body-title">Listings on your watchlist</h4>
+<ul class="list-unstyled">
     {% for l in listings %}
-    <li>
-        <a href="{% url 'listing' l.id %}">{{ l }}</a>
-    </li>
+        <a class="index-listing-link" href="{% url 'listing' l.id %}">
+            <li class="list-element">
+                {{ l }}
+            </li>
+        </a>
+        <hr>
     {% empty %}
-        <li>There are currently no listings on your watchlist</li>
+        <li class="list-element">There are currently no listings on your watchlist</li>
     {% endfor %}
 </ul>
 {% endblock %}

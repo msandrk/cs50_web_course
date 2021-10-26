@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.forms.models import inlineformset_factory
 from django.views.decorators.http import require_http_methods
 from django.db import IntegrityError
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseServerError
@@ -43,8 +44,12 @@ class CommentForm(forms.ModelForm):
 
 @require_http_methods(["GET"])
 def index(request: HttpRequest) -> HttpResponse:
+    listings = {
+        l: l.bids.first().amount if l.bids.exists() else l.starting_price
+        for l in Listing.objects.filter(is_active=True)
+    }
     return render(request, "auctions/index.html", {
-        "listings": Listing.objects.filter(is_active=True)
+        "listings": listings
     })
 
 @require_http_methods(["GET", "POST"])
@@ -109,7 +114,7 @@ def new_listing(request: HttpRequest) -> HttpResponse:
         if not form.is_valid():
             return render(request, 'auctions/new-listing.html', {
                 "listing_form": form,
-                "error_field_message": next(iter(form.errors.items))
+                "error_field_message": next(iter(form.errors.items()))
             }, status=400)
         
         listing = form.save(commit=False)
@@ -179,7 +184,7 @@ def edit_listing(request: HttpRequest, listing_id: int) -> HttpResponse:
                 return render(request, 'auctions/edit_listing.html', {
                     'edit_form': form,
                     'listing_id': listing_id,
-                    'error_field_message': next(iter(form.errors.items))
+                    'error_field_message': next(iter(form.errors.items()))
                 }, status=400)
 
             listing.title = form.cleaned_data['title']
@@ -391,8 +396,18 @@ def remove_from_watchlist(request: HttpRequest, listing_id: int) -> HttpResponse
 @login_required
 @require_http_methods(["GET"])
 def activity(request: HttpRequest) -> HttpResponse:
-    owned_listings = Listing.objects.filter(owner=request.user)
+    owned_listings = { 
+        l: l.bids.first().amount if l.bids.exists() else l.starting_price 
+        for l in Listing.objects.filter(owner=request.user) 
+        }
+    
+    # User can bid multiple times on single listing -> use set
     bidded_listings = { bid.listing for bid in Bid.objects.filter(bidder=request.user) }
+    bidded_listings = { 
+        l: l.bids.first().amount if l.bids.exists() else l.starting_price 
+        for l in bidded_listings 
+    }
+
     return render(request, 'auctions/activity.html', {
         "owned_listings": owned_listings,
         "bidded_listings": bidded_listings
